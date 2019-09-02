@@ -216,7 +216,7 @@ class SampleProcessor(object):
                         img = cv2.resize( img, (resolution,resolution), cv2.INTER_CUBIC )
                     else:
                         img = do_transform (img, mask)
-                        img = cv2.warpAffine( img, LandmarksProcessor.get_transform_mat (sample.landmarks, resolution, target_ft), (resolution,resolution), flags=cv2.INTER_CUBIC )
+                        img = cv2.warpAffine( img, LandmarksProcessor.get_transform_mat (sample.landmarks, resolution, target_ft), (resolution,resolution), borderMode=(cv2.BORDER_REPLICATE if border_replicate else cv2.BORDER_CONSTANT), flags=cv2.INTER_CUBIC )
 
                 else:
                     img = do_transform (img, mask)
