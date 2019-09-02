@@ -59,14 +59,14 @@ class FANSegmentator(object):
             real_t = Input ( (resolution, resolution, 1) )
             out_t = self.model(inp_t)
             
-            loss = K.mean(5*K.square(out_t-real_t))
+            loss = K.mean(10*K.square(out_t-real_t))
             
             out_t_diff1 = out_t[:, 1:, :, :] - out_t[:, :-1, :, :]
             out_t_diff2 = out_t[:, :, 1:, :] - out_t[:, :, :-1, :]
 
             total_var_loss = K.mean( K.abs(out_t_diff1), axis=[1, 2, 3] ) + K.mean( K.abs(out_t_diff2), axis=[1, 2, 3] )
 
-            opt = Adam(lr=0.0002, beta_1=0.5, beta_2=0.999, tf_cpu_mode=2)
+            opt = Adam(lr=0.0001, beta_1=0.5, beta_2=0.999, tf_cpu_mode=2)
             
             self.train_func = K.function  ( [inp_t, real_t], [loss], opt.get_updates( [loss,total_var_loss], self.model.trainable_weights) )
 
