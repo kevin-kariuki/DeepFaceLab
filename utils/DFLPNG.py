@@ -354,6 +354,9 @@ class DFLPNG(object):
                                      pitch_yaw_roll=pitch_yaw_roll,
                                      eyebrows_expand_mod=eyebrows_expand_mod)
 
+    def remove_ie_polys(self):
+        self.dfl_dict['ie_polys'] = None
+
     def remove_fanseg_mask(self):
         self.dfl_dict['fanseg_mask'] = None
 

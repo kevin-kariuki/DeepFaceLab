@@ -337,7 +337,8 @@ def mask_editor_main(input_dir, confirmed_dir=None, skipped_dir=None, no_default
         
     if not no_default_mask:
         eyebrows_expand_mod = np.clip ( io.input_int ("Default eyebrows expand modifier? (0..400, skip:100) : ", 100), 0, 400 ) / 100.0
-   
+    else:
+        eyebrows_expand_mod = None
 
     wnd_name = "MaskEditor tool"
     io.named_window (wnd_name)
