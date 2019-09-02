@@ -55,8 +55,21 @@ class FANSegmentator(object):
                 CAInitializerMP ( conv_weights_list )
 
         if training:
-            #self.model.compile(loss='mse', optimizer=Adam(tf_cpu_mode=2))
-            self.model.compile(loss='binary_crossentropy', optimizer=Adam(tf_cpu_mode=2) )
+            inp_t = Input ( (resolution, resolution, 3) )
+            real_t = Input ( (resolution, resolution, 1) )
+            out_t = self.model(inp_t)
+            
+            loss = K.mean(5*K.square(out_t-real_t))
+            
+            out_t_diff1 = out_t[:, 1:, :, :] - out_t[:, :-1, :, :]
+            out_t_diff2 = out_t[:, :, 1:, :] - out_t[:, :, :-1, :]
+
+            total_var_loss = K.mean( K.abs(out_t_diff1), axis=[1, 2, 3] ) + K.mean( K.abs(out_t_diff2), axis=[1, 2, 3] )
+
+            opt = Adam(lr=0.0002, beta_1=0.5, beta_2=0.999, tf_cpu_mode=2)
+            
+            self.train_func = K.function  ( [inp_t, real_t], [loss], opt.get_updates( [loss,total_var_loss], self.model.trainable_weights) )
+
             
     def __enter__(self):
         return self
@@ -67,8 +80,9 @@ class FANSegmentator(object):
     def save_weights(self):
         self.model.save_weights (str(self.weights_path))
 
-    def train_on_batch(self, inp, outp):
-        return self.model.train_on_batch(inp, outp)
+    def train(self, inp, real):
+        loss, = self.train_func ([inp, real])
+        return loss
 
     def extract (self, input_image, is_input_tanh=False):
         input_shape_len = len(input_image.shape)
@@ -84,16 +98,16 @@ class FANSegmentator(object):
         return result
 
     @staticmethod
-    def BuildModel ( resolution, ngf=64, norm='', act='lrelu'):
+    def BuildModel ( resolution, ngf=64):
         exec( nnlib.import_all(), locals(), globals() )
         inp = Input ( (resolution,resolution,3) )
         x = inp
-        x = FANSegmentator.Flow(ngf=ngf, norm=norm, act=act)(x)
+        x = FANSegmentator.Flow(ngf=ngf)(x)
         model = Model(inp,x)
         return model
 
     @staticmethod
-    def Flow(ngf=64, num_downs=4, norm='', act='lrelu'):
+    def Flow(ngf=64):
         exec( nnlib.import_all(), locals(), globals() )
 
         def func(input):
