@@ -9,7 +9,7 @@ from interact import interact as io
 from utils.cv2_utils import *
 
 
-def ConvertMaskedFace (cfg, frame_info, img_bgr_uint8, img_bgr, img_face_landmarks):
+def ConvertMaskedFace (predictor_func, predictor_input_shape, cfg, frame_info, img_bgr_uint8, img_bgr, img_face_landmarks):
 
     #if debug:
     #    debugs = [img_bgr.copy()]
@@ -26,7 +26,7 @@ def ConvertMaskedFace (cfg, frame_info, img_bgr_uint8, img_bgr, img_face_landmar
     out_img = img_bgr.copy()
     out_merging_mask = None
 
-    output_size = cfg.predictor_input_shape[0]
+    output_size = predictor_input_shape[0]
     if cfg.super_resolution_mode != 0:
         output_size *= 2
 
@@ -36,17 +36,17 @@ def ConvertMaskedFace (cfg, frame_info, img_bgr_uint8, img_bgr, img_face_landmar
     dst_face_bgr      = cv2.warpAffine( img_bgr        , face_mat, (output_size, output_size), flags=cv2.INTER_CUBIC )
     dst_face_mask_a_0 = cv2.warpAffine( img_face_mask_a, face_mat, (output_size, output_size), flags=cv2.INTER_CUBIC )
 
-    predictor_input_bgr      = cv2.resize (dst_face_bgr, cfg.predictor_input_shape[0:2] )
+    predictor_input_bgr      = cv2.resize (dst_face_bgr, predictor_input_shape[0:2] )
 
-    if cfg.predictor_masked:
-        prd_face_bgr, prd_face_mask_a_0 = cfg.predictor_func (predictor_input_bgr)
-
-        prd_face_bgr      = np.clip (prd_face_bgr, 0, 1.0 )
-        prd_face_mask_a_0 = np.clip (prd_face_mask_a_0, 0.0, 1.0)
+    predicted = predictor_func (predictor_input_bgr)
+    if isinstance(predicted, tuple):
+        #converter return bgr,mask
+        prd_face_bgr      = np.clip (predicted[0], 0, 1.0)
+        prd_face_mask_a_0 = np.clip (predicted[1], 0, 1.0)
     else:
-        predicted = cfg.predictor_func (predictor_input_bgr)
+        #converter return bgr only, using dst mask
         prd_face_bgr      = np.clip (predicted, 0, 1.0 )
-        prd_face_mask_a_0 = cv2.resize (dst_face_mask_a_0, cfg.predictor_input_shape[0:2] )
+        prd_face_mask_a_0 = cv2.resize (dst_face_mask_a_0, predictor_input_shape[0:2] )
 
     if cfg.super_resolution_mode:
         #if debug:
@@ -366,14 +366,14 @@ def ConvertMaskedFace (cfg, frame_info, img_bgr_uint8, img_bgr, img_face_landmar
     return out_img, out_merging_mask
 
 
-def ConvertMasked (cfg, frame_info):
+def ConvertMasked (predictor_func, predictor_input_shape, cfg, frame_info):
     img_bgr_uint8 = cv2_imread(frame_info.filename)
     img_bgr_uint8 = imagelib.normalize_channels (img_bgr_uint8, 3)
     img_bgr = img_bgr_uint8.astype(np.float32) / 255.0
 
     outs = []
     for face_num, img_landmarks in enumerate( frame_info.landmarks_list ):
-        out_img, out_img_merging_mask = ConvertMaskedFace (cfg, frame_info, img_bgr_uint8, img_bgr, img_landmarks)
+        out_img, out_img_merging_mask = ConvertMaskedFace (predictor_func, predictor_input_shape, cfg, frame_info, img_bgr_uint8, img_bgr, img_landmarks)
         outs += [ (out_img, out_img_merging_mask) ]
 
     #Combining multiple face outputs

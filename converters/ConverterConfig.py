@@ -14,11 +14,8 @@ class ConverterConfig(object):
     TYPE_IMAGE = 3
     TYPE_IMAGE_WITH_LANDMARKS = 4
 
-    def __init__(self, type=0, predictor_func=None,
-                               predictor_input_shape=None):
+    def __init__(self, type=0):
         self.type = type
-        self.predictor_func = predictor_func
-        self.predictor_input_shape = predictor_input_shape
 
         self.superres_func = None
         self.sharpen_func = None
@@ -113,38 +110,18 @@ ctm_str_dict = {None:0, "rct":1, "lct": 2, "ebs":3 }
 
 class ConverterConfigMasked(ConverterConfig):
 
-    def __init__(self, predictor_func=None,
-                       predictor_input_shape=None,
-                       predictor_masked=True,
-                       face_type=FaceType.FULL,
+    def __init__(self, face_type=FaceType.FULL,
                        default_mode = 4,
-                       base_erode_mask_modifier = 0,
-                       base_blur_mask_modifier = 0,
-                       default_erode_mask_modifier = 0,
-                       default_blur_mask_modifier = 0,
                        clip_hborder_mask_per = 0,
                        ):
 
-        super().__init__(type=ConverterConfig.TYPE_MASKED,
-                         predictor_func=predictor_func,
-                         predictor_input_shape=predictor_input_shape,
-                         )
-        if len(predictor_input_shape) != 3:
-            raise ValueError("ConverterConfigMasked: predictor_input_shape must be rank 3.")
-
-        if predictor_input_shape[0] != predictor_input_shape[1]:
-            raise ValueError("ConverterConfigMasked: predictor_input_shape must be a square.")
-
-        self.predictor_masked = predictor_masked
+        super().__init__(type=ConverterConfig.TYPE_MASKED)
+        
         self.face_type = face_type
         if self.face_type not in [FaceType.FULL, FaceType.HALF]:
             raise ValueError("ConverterConfigMasked supports only full or half face masks.")
 
         self.default_mode = default_mode
-        self.base_erode_mask_modifier = base_erode_mask_modifier
-        self.base_blur_mask_modifier = base_blur_mask_modifier
-        self.default_erode_mask_modifier = default_erode_mask_modifier
-        self.default_blur_mask_modifier = default_blur_mask_modifier
         self.clip_hborder_mask_per = clip_hborder_mask_per
 
         #default changeable params
@@ -182,10 +159,10 @@ class ConverterConfigMasked(ConverterConfig):
         self.mask_mode = a[ (a.index(self.mask_mode)+1) % len(a) ]
 
     def add_erode_mask_modifier(self, diff):
-        self.erode_mask_modifier = np.clip ( self.erode_mask_modifier+diff , -200, 200)
+        self.erode_mask_modifier = np.clip ( self.erode_mask_modifier+diff , -400, 400)
 
     def add_blur_mask_modifier(self, diff):
-        self.blur_mask_modifier = np.clip ( self.blur_mask_modifier+diff , -200, 200)
+        self.blur_mask_modifier = np.clip ( self.blur_mask_modifier+diff , -400, 400)
 
     def add_motion_blur_power(self, diff):
         self.motion_blur_power = np.clip ( self.motion_blur_power+diff, 0, 100)
@@ -235,8 +212,8 @@ class ConverterConfigMasked(ConverterConfig):
             self.mask_mode = io.input_int (s, 1, valid_list=half_face_mask_mode_dict.keys(), help_message="If you learned the mask, then option 1 should be choosed. 'dst' mask is raw shaky mask from dst aligned images.")
 
         if 'raw' not in self.mode:
-            self.erode_mask_modifier = self.base_erode_mask_modifier + np.clip ( io.input_int ("Choose erode mask modifier [-200..200] (skip:%d) : " % (self.default_erode_mask_modifier), self.default_erode_mask_modifier), -200, 200)
-            self.blur_mask_modifier = self.base_blur_mask_modifier + np.clip ( io.input_int ("Choose blur mask modifier [-200..200] (skip:%d) : " % (self.default_blur_mask_modifier), self.default_blur_mask_modifier), -200, 200)
+            self.erode_mask_modifier = np.clip ( io.input_int ("Choose erode mask modifier [-400..400] (skip:%d) : " % 0, 0), -400, 400)
+            self.blur_mask_modifier =  np.clip ( io.input_int ("Choose blur mask modifier [-400..400] (skip:%d) : " % 0, 0), -400, 400)
             self.motion_blur_power = np.clip ( io.input_int ("Choose motion blur power [0..100] (skip:%d) : " % (0), 0), 0, 100)
 
         self.output_face_scale = np.clip (io.input_int ("Choose output face scale modifier [-50..50] (skip:0) : ", 0), -50, 50)
@@ -312,14 +289,8 @@ class ConverterConfigMasked(ConverterConfig):
 
 class ConverterConfigFaceAvatar(ConverterConfig):
 
-    def __init__(self, predictor_func=None,
-                       predictor_input_shape=None,
-                       temporal_face_count=0
-                       ):
-        super().__init__(type=ConverterConfig.TYPE_FACE_AVATAR,
-                         predictor_func=predictor_func,
-                         predictor_input_shape=predictor_input_shape
-                         )
+    def __init__(self, temporal_face_count=0):
+        super().__init__(type=ConverterConfig.TYPE_FACE_AVATAR)
         self.temporal_face_count = temporal_face_count
 
         #changeable params
