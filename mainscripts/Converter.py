@@ -115,7 +115,13 @@ class ConvertSubprocessor(Subprocessor):
                 return fanseg.extract(*args, **kwargs)
 
             self.fanseg_extract_func = fanseg_extract
-
+            
+            import ebsynth
+            def ebs_ct(*args, **kwargs):                    
+                return ebsynth.color_transfer(*args, **kwargs)
+                
+            self.ebs_ct_func = ebs_ct
+            
             return None
 
         #override
@@ -124,6 +130,7 @@ class ConvertSubprocessor(Subprocessor):
             cfg.predictor_func = self.predictor_func
             cfg.sharpen_func = self.sharpen_func
             cfg.superres_func = self.superres_func
+            cfg.ebs_ct_func = self.ebs_ct_func
 
             frame_info = pf.frame_info
 

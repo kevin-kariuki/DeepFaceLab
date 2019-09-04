@@ -198,7 +198,7 @@ def ConvertMaskedFace (cfg, frame_info, img_bgr_uint8, img_bgr, img_face_landmar
             #    debugs += [img_face_mask_aaa.copy()]
 
             if 'seamless' not in cfg.mode and cfg.color_transfer_mode != 0:
-                if cfg.color_transfer_mode == 1:
+                if cfg.color_transfer_mode == 1: #rct
                     #if debug:
                     #    debugs += [ np.clip( cv2.warpAffine( prd_face_bgr, face_output_mat, img_size, np.zeros(img_bgr.shape, dtype=np.float32), cv2.WARP_INVERSE_MAP | cv2.INTER_CUBIC, cv2.BORDER_TRANSPARENT ), 0, 1.0) ]
 
@@ -211,8 +211,8 @@ def ConvertMaskedFace (cfg, frame_info, img_bgr_uint8, img_bgr, img_face_landmar
                     #    debugs += [ np.clip( cv2.warpAffine( prd_face_bgr, face_output_mat, img_size, np.zeros(img_bgr.shape, dtype=np.float32), cv2.WARP_INVERSE_MAP | cv2.INTER_CUBIC, cv2.BORDER_TRANSPARENT ), 0, 1.0) ]
 
 
-                elif cfg.color_transfer_mode == 2:
-                    #if debug:
+                elif cfg.color_transfer_mode == 2: #lct
+                    #if debug: 
                     #    debugs += [ np.clip( cv2.warpAffine( prd_face_bgr, face_output_mat, img_size, np.zeros(img_bgr.shape, dtype=np.float32), cv2.WARP_INVERSE_MAP | cv2.INTER_CUBIC, cv2.BORDER_TRANSPARENT ), 0, 1.0) ]
 
                     prd_face_bgr = imagelib.linear_color_transfer (prd_face_bgr, dst_face_bgr)
@@ -220,7 +220,14 @@ def ConvertMaskedFace (cfg, frame_info, img_bgr_uint8, img_bgr, img_face_landmar
 
                     #if debug:
                     #    debugs += [ np.clip( cv2.warpAffine( prd_face_bgr, face_output_mat, img_size, np.zeros(img_bgr.shape, dtype=np.float32), cv2.WARP_INVERSE_MAP | cv2.INTER_CUBIC, cv2.BORDER_TRANSPARENT ), 0, 1.0) ]
+                elif cfg.color_transfer_mode == 3: #ebs
+                    #if debug:
+                    #    debugs += [ np.clip( cv2.warpAffine( prd_face_bgr, face_output_mat, img_size, np.zeros(img_bgr.shape, dtype=np.float32), cv2.WARP_INVERSE_MAP | cv2.INTER_CUBIC, cv2.BORDER_TRANSPARENT ), 0, 1.0) ]
 
+                    prd_face_bgr = cfg.ebs_ct_func ( np.clip( (dst_face_bgr*255), 0, 255).astype(np.uint8),
+                                                     np.clip( (prd_face_bgr*255), 0, 255).astype(np.uint8),  )#prd_face_mask_a
+                    prd_face_bgr = np.clip( prd_face_bgr.astype(np.float32) / 255.0, 0.0, 1.0)
+                    
             if cfg.mode == 'hist-match-bw':
                 prd_face_bgr = cv2.cvtColor(prd_face_bgr, cv2.COLOR_BGR2GRAY)
                 prd_face_bgr = np.repeat( np.expand_dims (prd_face_bgr, -1), (3,), -1 )
